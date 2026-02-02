@@ -17,6 +17,7 @@ nu = size(Bc,2);
 nq = size(Cc,1);
 
 na = 3; % numero de agentes
+nr = 1; % numero de referencias
 
 N = 25; % Horizonte de predicao
 
@@ -55,34 +56,47 @@ Nx = aux1(1:nx*na,:); Nu = aux1(nx*na+1:end,:);
 Nx = Nx*[1;1;1]; % Mapeia pra uma unica ref
 Nu = Nu*[1;1;1]; % Mapeia pra uma unica ref
 %% Restricoes 
-% Su *u <= bu 
-umax = 10000;
-umin = -1000;
 
-Su = [1; -1];
-bu = [umax; -umin];
-eu = 1e-3*ones(na*size(Su,1),1);
+% Su *u <= bu
+% Ag1
+umax1 = 1;  umin1 = -1000;
+% Ag2
+umax2 = 10000;  umin2 = -0.5;
+% Ag3
+umax3 = 10000;  umin3 = -0.5;
 
 % Sx*x <= bx
-x1max = 1000;
-x1min = -1000;
-x2max = 1000;
-x2min = -1000;
-
-Sx = [1 0; -1 0; 0 1; 0 -1]; 
-bx = [x1max ; -x1min; x2max; -x2min];
-ex = 1e-3*ones(na*size(Sx,1),1);
+% Ag1
+x1max_1 = 1000; x1min_1 = -1000;
+x2max_1 = 1000; x2min_1 = -1000;
+% Ag2
+x1max_2 = 1000; x1min_2 = -1000;
+x2max_2 = 1000; x2min_2 = -1000;
+% Ag3
+x1max_3 = 1000; x1min_3 = -1000;
+x2max_3 = 1000; x2min_3 = -1000;
 
 % Matrizes empilhando agentes
+Su = [1; -1];
+eu = 1e-3*ones(na*size(Su,1),1);
+
 Su_barra = Su;
 for i = 2:na
     Su_barra = blkdiag(Su_barra,Su);
 end
+
+Sx = [1 0; -1 0; 0 1; 0 -1]; 
+ex = 1e-3*ones(na*size(Sx,1),1);
 
 Sx_barra = Sx;
 for i = 2:na
     Sx_barra = blkdiag(Sx_barra,Sx);
 end
 
-bx_barra = [repmat(bx,na,1)];
-bu_barra = [repmat(bu,na,1)];
+bx_barra = [x1max_1 ; -x1min_1; x2max_1; -x2min_1;
+            x1max_2 ; -x1min_2; x2max_2; -x2min_2;
+            x1max_3 ; -x1min_3; x2max_3; -x2min_3;
+                                                    ];
+bu_barra = [umax1; -umin1;
+            umax2; -umin2;
+            umax3; -umin3 ];

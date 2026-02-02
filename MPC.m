@@ -61,7 +61,7 @@ for k = 1:kend
     
     bxp = [repmat(bx_barra,N-1,1);bf];
 
-    Aqp = [Sxp*Bp   zeros(615,1);  Sup zeros(150,1)];
+    Aqp = [Sxp*Bp   zeros(size(Sxp*Bp,1),1);  Sup zeros(size(Sup,1),1)];
     bqp = [bxp - Sxp*Ap*x(:,k);       bup];
 
     Hqp = [Bp'*Qp*Bp + Rp,              (-(Inx*Nx)'*Qp*Bp-(Inu*Nu)'*Rp)';
@@ -73,19 +73,34 @@ for k = 1:kend
 
     fqp = [(Ap*x(:,k))'*Qp*Bp,           ((-x(:,k)'*Q_barra-(Ap*x(:,k))'*Qp*Inx)*Nx)] ;
 
-    dummy = quadprog(Hqp, fqp, [],[], [], [], [], [], [], options_qudprog);
+    % 1. Inicializacao
+    % dummy = sdpvar(N*nu*na+nr,1);
+    u_var = sdpvar(N*nu*na,1);
+    rbar_var = intvar(nr,1);
+    dummy = [u_var; rbar_var];
+    obj = 0.5*dummy'*Hqp*dummy+fqp*dummy;
 
-    u(:,k) = dummy(1:3);
-    rbar_opt(:,k) = dummy(end);
+    LMIs = [];
 
+    % 3. LMIs
+    LMIs = [LMIs,Aqp*dummy-bqp <= 0];
 
-    % simulacao linear
-    % x(:,k+1) = A*x(:,k)+B*u(:,k);
+    % 4. Resolver as LMIs 
+    solucao = optimize(LMIs, obj, sdpsettings('solver', 'bnb'));
+    if solucao.problem ~= 0
+        solucao.info
+        % error('QP nao resolvido')
+    end
     
+    dummy_opt = value(dummy);
+    u(:,k) = dummy_opt(1:3);
+    rbar_opt(:,k) = dummy_opt(end); 
     rbar(:,k+1) = rbar_opt(:,k);
+
     xini = x(:,k);
     [t, xd] = ode45(@(t,x) simulation(x, u(:,k),Ac_barra,Bc_barra),[0 T], xini, options2); 
     x(:,k+1) = xd(length(t),:)';
+    
     % 
     % t = linspace((k-1)*T,k*T,nt);
     % U = repmat(u(:,k)',nt,1);
@@ -97,10 +112,6 @@ for k = 1:kend
 end
 
 function xdot = simulation(x,u,Ac,Bc)
-% w = sqrt((a*sin(x(1))+u)/c);
-% xdot_1 = x(2);
-% xdot_2 = -a*sin(x(1))-b*x(2)+c*1.05*w^2;
-% xdot = [xdot_1;xdot_2];
 xdot = Ac*x+Bc*u;
 end
 
@@ -113,28 +124,34 @@ hold on;
 title('Agente1')
 xlabel('Time, s')
 ylabel('u, rad')
+hold on;
+plot([0 kend],[umax1 umax1],'--k','linewidth',1,'handlevisibility','off')
+% text(0.1,0.18,'Limitante de x2','Color','r','FontWeight','bold')
+xlim([0 kend])
 
 figure (2)
 hold on
 grid on; 
 plot(u(2,:),'r','LineWidth',2)
-hold on;
+hold on; xlim([0 kend])
 title('Agente2')
 xlabel('Time, s')
 ylabel('u, rad')
+plot([0 kend],[umin2 umin2],'--k','linewidth',1,'handlevisibility','off')
 
 figure (4)
 hold on
 grid on; 
 plot(u(3,:),'r','LineWidth',2)
-hold on;
+hold on;xlim([0 kend])
 title('Agente3')
 xlabel('Time, s')
 ylabel('u, rad')
+plot([0 kend],[umin3 umin3],'--k','linewidth',1,'handlevisibility','off')
 
 figure (6)
 hold on
-grid on; 
+grid on; xlim([0 kend])
 plot(x(1,:),'r','LineWidth',2); hold on;
 plot(x(2,:),'b','LineWidth',2)
 hold on;
@@ -149,7 +166,7 @@ grid on;
 plot(x(3,:),'r','LineWidth',2); hold on;
 plot(x(4,:),'b','LineWidth',2)
 hold on;
-hold on;
+hold on;xlim([0 kend])
 xlabel('k')
 title('Agente2')
 legend('x1','x2')
@@ -160,7 +177,7 @@ grid on;
 plot(x(5,:),'r','LineWidth',2); hold on;
 plot(x(6,:),'b','LineWidth',2)
 hold on;
-hold on;
+hold on;xlim([0 kend])
 xlabel('k')
 title('Agente3')
 legend('x1','x2')
@@ -168,8 +185,8 @@ legend('x1','x2')
 figure (9)
 hold on
 grid on; 
-plot(rbar,'r','LineWidth',2); hold on;
+stairs(rbar,'r','LineWidth',2); hold on;
 hold on;
-hold on;
+hold on;xlim([0 kend])
 xlabel('k')
 legend('rbar')
