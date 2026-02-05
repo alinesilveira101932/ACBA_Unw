@@ -10,12 +10,12 @@ Parametros
 
 %% Determinar O_psi_inf - todas as refs
 
-Gamma = [eye(nx*na) zeros(nx*na,1); -K (K*Nx+Nu); zeros(na*nx,nx*na) Nx; zeros(nu*na,nx*na) Nu];
+Gamma = [eye(nx*na) zeros(nx*na,nr); -K (K*Nx+Nu); zeros(na*nx,nx*na) Nx; zeros(nu*na,nx*na) Nu];
 
 Spsi = blkdiag(Sx_barra,Su_barra,Sx_barra,Su_barra);
 bpsi = [bx_barra; bu_barra; bx_barra-ex; bu_barra-eu];
 
-Apsi_f = [Af B*(K*Nx+Nu); zeros(nq,nx*na) eye(nq)];
+Apsi_f = [Af B*(K*Nx+Nu); zeros(nq*nr,nx*na) eye(nq*nr)];
 max_iter = 50;
 
 [So,bo,Si,bi] = Oinf_MAS(Apsi_f,Gamma,Spsi,bpsi,max_iter);
@@ -43,13 +43,16 @@ options_qudprog = optimoptions('quadprog','Display','off');
 kend = 100;
 
 % Loop
-x(:,1) = [5;0;0.2;0;0.15;0];
-
+x(:,1) = [10;0;0.3;0;-1;0];
+x0 = x(:,1);
 sys = ss(Ac,Bc,[],[]);
 trec = 0; xrec = x(:,1)'; nt = 10; 
 
-rbar(:,1) = 0;
-
+rbar_opt(:,1) = [0;0;0];
+M(:,1) = [0;0;0];
+rbar_var0 = 0; 
+N_var0 = [0;0];
+u_var0 = zeros(na*nu*N,1);
 
 for k = 1:kend
 
@@ -57,11 +60,25 @@ for k = 1:kend
     % J = f*U'+0.5*U'*H*U
     % s.a A * U < B
 
-    bf = bo - Or*rbar(:,k);
+    % 1. Inicializacao
+    u_var = sdpvar(N*nu*na,1);
+    rbar_var = sdpvar(1,1);
+    N_var = intvar(2,1);
+    
+    % Warm start
+    assign(rbar_var, rbar_var0);
+    assign(N_var, N_var0);
+    % assign(u_var, u_var0)
+
+    rbar = rbar_var*ones(nr,1) + 2*pi*[0; N_var];
+
+    dummy = [u_var; rbar];
+
+    bf = bo - Or*rbar;
     
     bxp = [repmat(bx_barra,N-1,1);bf];
 
-    Aqp = [Sxp*Bp   zeros(size(Sxp*Bp,1),1);  Sup zeros(size(Sup,1),1)];
+    Aqp = [Sxp*Bp   zeros(size(Sxp*Bp,1),nr);  Sup zeros(size(Sup,1),nr)];
     bqp = [bxp - Sxp*Ap*x(:,k);       bup];
 
     Hqp = [Bp'*Qp*Bp + Rp,              (-(Inx*Nx)'*Qp*Bp-(Inu*Nu)'*Rp)';
@@ -73,11 +90,7 @@ for k = 1:kend
 
     fqp = [(Ap*x(:,k))'*Qp*Bp,           ((-x(:,k)'*Q_barra-(Ap*x(:,k))'*Qp*Inx)*Nx)] ;
 
-    % 1. Inicializacao
-    % dummy = sdpvar(N*nu*na+nr,1);
-    u_var = sdpvar(N*nu*na,1);
-    rbar_var = intvar(nr,1);
-    dummy = [u_var; rbar_var];
+    
     obj = 0.5*dummy'*Hqp*dummy+fqp*dummy;
 
     LMIs = [];
@@ -86,16 +99,34 @@ for k = 1:kend
     LMIs = [LMIs,Aqp*dummy-bqp <= 0];
 
     % 4. Resolver as LMIs 
-    solucao = optimize(LMIs, obj, sdpsettings('solver', 'bnb'));
+    solucao = optimize(LMIs, obj, sdpsettings('solver','gurobi','usex0',1));
     if solucao.problem ~= 0
         solucao.info
-        % error('QP nao resolvido')
     end
     
     dummy_opt = value(dummy);
-    u(:,k) = dummy_opt(1:3);
-    rbar_opt(:,k) = dummy_opt(end); 
-    rbar(:,k+1) = rbar_opt(:,k);
+    u(:,k) = dummy_opt(1:na);
+  
+    rbar_1(:,k) = dummy_opt(na*N*nu+1);
+    rbar_2(:,k) = dummy_opt(na*N*nu+2);
+    rbar_3(:,k) = dummy_opt(end);
+    rbar_opt(:,k+1) = [rbar_1(:,k);rbar_2(:,k);rbar_3(:,k)];
+
+    N_var_opt(:,k) = value(N_var);
+    rbar_var_opt(:,k) = value(rbar_var);
+    
+    % Warm start
+    rbar_var0 = rbar_var_opt(:,k);
+    N_var0 =  N_var_opt(:,k) ;
+    rbar0 = rbar_var0*ones(nr,1) + 2*pi*[0; N_var0];
+
+    UN_1 = dummy_opt(1:(N-1)*na);
+
+
+    xN = Ap*x(:,k) + Bp*dummy_opt(1:end-nr);
+    xN_1 = xN((N-2)*na*nx+1:(N-1)*na*nx);
+ 
+    u_var0 = [UN_1; -K*(xN_1-Nx*rbar0)+Nu*rbar0];
 
     xini = x(:,k);
     [t, xd] = ode45(@(t,x) simulation(x, u(:,k),Ac_barra,Bc_barra),[0 T], xini, options2); 
@@ -122,10 +153,10 @@ grid on;
 plot(u(1,:),'r','LineWidth',2)
 hold on;
 title('Agente1')
-xlabel('Time, s')
+xlabel('k')
 ylabel('u, rad')
 hold on;
-plot([0 kend],[umax1 umax1],'--k','linewidth',1,'handlevisibility','off')
+% plot([0 kend],[umax1 umax1],'--k','linewidth',1,'handlevisibility','off')
 % text(0.1,0.18,'Limitante de x2','Color','r','FontWeight','bold')
 xlim([0 kend])
 
@@ -135,9 +166,9 @@ grid on;
 plot(u(2,:),'r','LineWidth',2)
 hold on; xlim([0 kend])
 title('Agente2')
-xlabel('Time, s')
+xlabel('k')
 ylabel('u, rad')
-plot([0 kend],[umin2 umin2],'--k','linewidth',1,'handlevisibility','off')
+% plot([0 kend],[umin2 umin2],'--k','linewidth',1,'handlevisibility','off')
 
 figure (4)
 hold on
@@ -145,9 +176,9 @@ grid on;
 plot(u(3,:),'r','LineWidth',2)
 hold on;xlim([0 kend])
 title('Agente3')
-xlabel('Time, s')
+xlabel('k')
 ylabel('u, rad')
-plot([0 kend],[umin3 umin3],'--k','linewidth',1,'handlevisibility','off')
+% plot([0 kend],[umin3 umin3],'--k','linewidth',1,'handlevisibility','off')
 
 figure (6)
 hold on
@@ -156,6 +187,7 @@ plot(x(1,:),'r','LineWidth',2); hold on;
 plot(x(2,:),'b','LineWidth',2)
 hold on;
 hold on;
+stairs(rbar_opt(1,:),'--k','linewidth',1,'handlevisibility','off')
 xlabel('k')
 title('Agente1')
 legend('x1','x2')
@@ -166,6 +198,7 @@ grid on;
 plot(x(3,:),'r','LineWidth',2); hold on;
 plot(x(4,:),'b','LineWidth',2)
 hold on;
+stairs(rbar_opt(2,:),'--k','linewidth',1,'handlevisibility','off')
 hold on;xlim([0 kend])
 xlabel('k')
 title('Agente2')
@@ -177,6 +210,7 @@ grid on;
 plot(x(5,:),'r','LineWidth',2); hold on;
 plot(x(6,:),'b','LineWidth',2)
 hold on;
+stairs(rbar_opt(3,:),'--k','linewidth',1,'handlevisibility','off')
 hold on;xlim([0 kend])
 xlabel('k')
 title('Agente3')
@@ -185,8 +219,27 @@ legend('x1','x2')
 figure (9)
 hold on
 grid on; 
-stairs(rbar,'r','LineWidth',2); hold on;
+stairs(rbar_opt(1,:),'LineWidth',2); hold on;
+stairs(rbar_opt(2,:),'LineWidth',2); hold on;
+stairs(rbar_opt(3,:),'LineWidth',2); hold on;
 hold on;
 hold on;xlim([0 kend])
 xlabel('k')
-legend('rbar')
+legend('rbar1','rbar2','rbar3')
+
+figure (10)
+hold on
+grid on; 
+plot([0 kend],[0 0],'LineWidth',2)
+stairs(N_var_opt(1,:),'LineWidth',2); hold on;
+stairs(N_var_opt(2,:),'LineWidth',2); hold on;
+
+plot(rbar_var_opt,'LineWidth',2); hold on;
+hold on;
+hold on;xlim([0 kend])
+xlabel('k')
+legend('N1','N2','N3','rbar')
+
+check1 = abs(rbar_opt(1,end)- rbar_opt(2,end))/(2*pi)
+check2 = abs(rbar_opt(1,end)- rbar_opt(3,end))/(2*pi)
+check3 = abs(rbar_opt(3,end)- rbar_opt(2,end))/(2*pi)

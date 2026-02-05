@@ -17,7 +17,7 @@ nu = size(Bc,2);
 nq = size(Cc,1);
 
 na = 3; % numero de agentes
-nr = 1; % numero de referencias
+nr = 3; % numero de referencias
 
 N = 25; % Horizonte de predicao
 
@@ -53,17 +53,16 @@ Af = A-B*K;
 % Valores de equilibrio
 aux1 = inv([A-eye(nx*na) B;C zeros(na)])*[zeros(nx*na,na);eye(na)];
 Nx = aux1(1:nx*na,:); Nu = aux1(nx*na+1:end,:);
-Nx = Nx*[1;1;1]; % Mapeia pra uma unica ref
-Nu = Nu*[1;1;1]; % Mapeia pra uma unica ref
+
 %% Restricoes 
 
 % Su *u <= bu
 % Ag1
-umax1 = 1;  umin1 = -1000;
+umax1 = 1000;  umin1 = -1000;
 % Ag2
-umax2 = 10000;  umin2 = -0.5;
+umax2 = 1000;  umin2 = -1000;
 % Ag3
-umax3 = 10000;  umin3 = -0.5;
+umax3 = 10000;  umin3 = -1000;
 
 % Sx*x <= bx
 % Ag1
