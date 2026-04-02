@@ -19,7 +19,7 @@ nq = size(Cc,1);
 na = 3; % numero de agentes
 nr = 3; % numero de referencias
 
-N = 25; % Horizonte de predicao
+N = 30; % Horizonte de predicao
 
 % Matrizes de Peso
 Q = 10*eye(nx);
@@ -58,11 +58,11 @@ Nx = aux1(1:nx*na,:); Nu = aux1(nx*na+1:end,:);
 
 % Su *u <= bu
 % Ag1
-umax1 = 1000;  umin1 = -1000;
+umax1 = 5;  umin1 = -5;
 % Ag2
-umax2 = 1000;  umin2 = -1000;
+umax2 = 5;  umin2 = -5;
 % Ag3
-umax3 = 10000;  umin3 = -1000;
+umax3 = 5;  umin3 = -5;
 
 % Sx*x <= bx
 % Ag1
