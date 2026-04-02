@@ -43,32 +43,24 @@ options_qudprog = optimoptions('quadprog','Display','off');
 kend = 100;
 
 % Loop
-x(:,1) = [10;0;0.3;0;-1;0];
+x(:,1) = [pi/3;10;pi/10;0;pi/3;-5];
 x0 = x(:,1);
 sys = ss(Ac,Bc,[],[]);
 trec = 0; xrec = x(:,1)'; nt = 10; 
 
 rbar_opt(:,1) = [0;0;0];
-M(:,1) = [0;0;0];
-rbar_var0 = 0; 
-N_var0 = [0;0];
-u_var0 = zeros(na*nu*N,1);
+
+
+    u_var = sdpvar(N*nu*na,1);
+    rbar_var = sdpvar(1,1);
+    N_var = intvar(2,1);
 
 for k = 1:kend
 
   % Matrizes finais do quadprog 
     % J = f*U'+0.5*U'*H*U
     % s.a A * U < B
-
-    % 1. Inicializacao
-    u_var = sdpvar(N*nu*na,1);
-    rbar_var = sdpvar(1,1);
-    N_var = intvar(2,1);
-    
-    % Warm start
-    assign(rbar_var, rbar_var0);
-    assign(N_var, N_var0);
-    % assign(u_var, u_var0)
+     % 1. Inicializacao
 
     rbar = rbar_var*ones(nr,1) + 2*pi*[0; N_var];
 
@@ -99,7 +91,7 @@ for k = 1:kend
     LMIs = [LMIs,Aqp*dummy-bqp <= 0];
 
     % 4. Resolver as LMIs 
-    solucao = optimize(LMIs, obj, sdpsettings('solver','gurobi','usex0',1));
+    solucao = optimize(LMIs, obj, sdpsettings('solver','gurobi'));
     if solucao.problem ~= 0
         solucao.info
     end
@@ -114,19 +106,6 @@ for k = 1:kend
 
     N_var_opt(:,k) = value(N_var);
     rbar_var_opt(:,k) = value(rbar_var);
-    
-    % Warm start
-    rbar_var0 = rbar_var_opt(:,k);
-    N_var0 =  N_var_opt(:,k) ;
-    rbar0 = rbar_var0*ones(nr,1) + 2*pi*[0; N_var0];
-
-    UN_1 = dummy_opt(1:(N-1)*na);
-
-
-    xN = Ap*x(:,k) + Bp*dummy_opt(1:end-nr);
-    xN_1 = xN((N-2)*na*nx+1:(N-1)*na*nx);
- 
-    u_var0 = [UN_1; -K*(xN_1-Nx*rbar0)+Nu*rbar0];
 
     xini = x(:,k);
     [t, xd] = ode45(@(t,x) simulation(x, u(:,k),Ac_barra,Bc_barra),[0 T], xini, options2); 
@@ -146,100 +125,122 @@ function xdot = simulation(x,u,Ac,Bc)
 xdot = Ac*x+Bc*u;
 end
 
-% Plots
-figure (1)
-hold on
-grid on; 
-plot(u(1,:),'r','LineWidth',2)
-hold on;
-title('Agente1')
-xlabel('k')
-ylabel('u, rad')
-hold on;
-% plot([0 kend],[umax1 umax1],'--k','linewidth',1,'handlevisibility','off')
-% text(0.1,0.18,'Limitante de x2','Color','r','FontWeight','bold')
-xlim([0 kend])
-
-figure (2)
-hold on
-grid on; 
-plot(u(2,:),'r','LineWidth',2)
-hold on; xlim([0 kend])
-title('Agente2')
-xlabel('k')
-ylabel('u, rad')
-% plot([0 kend],[umin2 umin2],'--k','linewidth',1,'handlevisibility','off')
-
-figure (4)
-hold on
-grid on; 
-plot(u(3,:),'r','LineWidth',2)
-hold on;xlim([0 kend])
-title('Agente3')
-xlabel('k')
-ylabel('u, rad')
-% plot([0 kend],[umin3 umin3],'--k','linewidth',1,'handlevisibility','off')
+%% Plots
+t = 0.1*(0:kend);
 
 figure (6)
 hold on
-grid on; xlim([0 kend])
-plot(x(1,:),'r','LineWidth',2); hold on;
-plot(x(2,:),'b','LineWidth',2)
+grid on; xlim([0 t(end)])
+plot(t,x(1,:),'Color',[0.85,0.33,0.10],'LineWidth',2); hold on;
+plot(t,x(2,:),'Color',[0.00,0.45,0.74],'LineWidth',2)
 hold on;
-hold on;
-stairs(rbar_opt(1,:),'--k','linewidth',1,'handlevisibility','off')
-xlabel('k')
-title('Agente1')
-legend('x1','x2')
+hold on; box on;
+stairs(t,rbar_opt(1,:),'--k','linewidth',1)
+xlabel('Tempo, s')
+ylabel('Agente 1')
+legend('$x_1$','$x_2$','$\bar{R}_i$', 'Interpreter', 'latex', 'FontSize', 14,'Location','northoutside','Orientation','horizontal')
 
 figure (7)
 hold on
 grid on; 
-plot(x(3,:),'r','LineWidth',2); hold on;
-plot(x(4,:),'b','LineWidth',2)
-hold on;
-stairs(rbar_opt(2,:),'--k','linewidth',1,'handlevisibility','off')
-hold on;xlim([0 kend])
-xlabel('k')
-title('Agente2')
-legend('x1','x2')
+plot(t,x(3,:),'Color',[0.85,0.33,0.10],'LineWidth',2); hold on;
+plot(t,x(4,:),'Color',[0.00,0.45,0.74],'LineWidth',2)
+hold on; box on;
+stairs(t,rbar_opt(2,:),'--k','linewidth',1,'handlevisibility','off')
+hold on;xlim([0 t(end)])
+xlabel('Tempo, s')
+ylabel('Agente 2')
+% legend('x_1','x_2')
 
 figure (8)
 hold on
 grid on; 
-plot(x(5,:),'r','LineWidth',2); hold on;
-plot(x(6,:),'b','LineWidth',2)
-hold on;
-stairs(rbar_opt(3,:),'--k','linewidth',1,'handlevisibility','off')
-hold on;xlim([0 kend])
-xlabel('k')
-title('Agente3')
-legend('x1','x2')
+plot(t,x(5,:),'Color',[0.85,0.33,0.10],'LineWidth',2); hold on;
+plot(t,x(6,:),'Color',[0.00,0.45,0.74],'LineWidth',2)
+hold on; box on;
+stairs(t,rbar_opt(3,:),'--k','linewidth',1,'handlevisibility','off')
+hold on;xlim([0 t(end)])
+xlabel('Tempo, s')
+ylabel('Agente 3')
 
-figure (9)
+
+figure (2)
 hold on
+grid on; xlim([0 t(end)])
+plot(t(2:end),u(1,:),'Color',[0.39,0.83,0.07],'LineWidth',2); hold on;
+plot(t(2:end),u(2,:),'Color',[0.07,0.62,1.00],'LineWidth',2);
+plot(t(2:end),u(3,:),'Color',[0.93,0.69,0.13],'LineWidth',2)
+hold on; box on;
+xlabel('Tempo, s'); ylabel('u')
+legend('Agente 1','Agente 2', 'Agente 3')
+plot([0 t(end)],[umax1 umax1],'--r','linewidth',1,'handlevisibility','off')
+plot([0 t(end)],[umin1 umin1],'--r','linewidth',1,'handlevisibility','off')
+text(0.1,5.3,'Limitante de controle','Color','r','FontWeight','bold')
+ylim([umin1-0.5 umax1+0.5])
+
+
+figure (104)
+subplot(4,1,1)
 grid on; 
-stairs(rbar_opt(1,:),'LineWidth',2); hold on;
-stairs(rbar_opt(2,:),'LineWidth',2); hold on;
-stairs(rbar_opt(3,:),'LineWidth',2); hold on;
-hold on;
-hold on;xlim([0 kend])
-xlabel('k')
-legend('rbar1','rbar2','rbar3')
+plot([0 t(end)],[0 0],'Color',[0.39,0.83,0.07],'LineWidth',2)
+xlim([0 t(end)])
+xlabel('Tempo, s');  box on;
+legend('N_1')
 
-figure (10)
-hold on
-grid on; 
-plot([0 kend],[0 0],'LineWidth',2)
-stairs(N_var_opt(1,:),'LineWidth',2); hold on;
-stairs(N_var_opt(2,:),'LineWidth',2); hold on;
+subplot(4,1,2)
+stairs(t(2:end),N_var_opt(1,:),'Color',[0.07,0.62,1.00],'LineWidth',2); hold on;
+xlim([0 t(end)]); grid on; box on;
+xlabel('Tempo, s');  
+legend('N_2')
 
-plot(rbar_var_opt,'LineWidth',2); hold on;
-hold on;
-hold on;xlim([0 kend])
-xlabel('k')
-legend('N1','N2','N3','rbar')
+subplot(4,1,3)
+stairs(t(2:end),N_var_opt(2,:),'Color',[0.93,0.69,0.13],'LineWidth',2); hold on;grid on;
+xlim([0 t(end)])
+xlabel('Tempo, s');   box on;
+legend('N_3')
 
+subplot(4,1,4)
+plot(t(2:end),rbar_var_opt,'k','LineWidth',2); hold on;grid on;
+xlim([0 t(end)])
+xlabel('Tempo, s');   box on;
+legend('$\bar{r}$', 'Interpreter', 'latex')
+
+
+%% Resultados
+
+D2pi_com = (mod(x(1,:)-x(3,:)+pi,2*pi)-pi).^2 + abs(rem(x(1,:)-x(5,:),2*pi)).^2 + abs(rem(x(5,:)-x(3,:),2*pi)).^2 + abs(x(2,:)-x(4,:)).^2+abs(x(2,:)-x(6,:)).^2+abs(x(6,:)-x(4,:)).^2;
 check1 = abs(rbar_opt(1,end)- rbar_opt(2,end))/(2*pi)
 check2 = abs(rbar_opt(1,end)- rbar_opt(3,end))/(2*pi)
 check3 = abs(rbar_opt(3,end)- rbar_opt(2,end))/(2*pi)
+
+% figure (11)
+% hold on
+% grid on; xlim([0 t(end)])
+% plot(t,D2pi_com,'r','LineWidth',2); hold on;
+% hold on;  box on;
+% xlabel('Tempo, s'); ylabel('D')
+% legend('Com Anti-Unwinding','Sem Anti-Unwinding')
+
+e12 = abs(exp(1j*x(1,:))-exp(1j*x(3,:))); e13 = abs(exp(1j*x(1,:))-exp(1j*x(5,:))); e23 = abs(exp(1j*x(3,:))-exp(1j*x(5,:)));
+
+
+figure (13)
+subplot(3,1,1)
+hold on
+grid on; xlim([0 t(end)])
+plot(t,e12,'-r','LineWidth',1.5); hold on;
+hold on;  box on;
+xlabel('Tempo, s'); ylabel('e_{12}')
+
+subplot(3,1,2)
+hold on
+grid on; xlim([0 t(end)])
+plot(t,e13,'--r','LineWidth',1.5); hold on;
+hold on;  box on;
+xlabel('Tempo, s'); ylabel('e_{13}')
+subplot(3,1,3)
+hold on
+grid on; xlim([0 t(end)])
+plot(t,e23,'-.r','LineWidth',1.5); hold on;
+hold on;  box on;
+xlabel('Tempo, s'); ylabel('e_{23}')
