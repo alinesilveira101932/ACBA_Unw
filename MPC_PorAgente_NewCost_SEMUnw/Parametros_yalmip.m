@@ -18,13 +18,14 @@ nq = size(C,1);
 
 na = 3; % numero de agentes
 nr = 3; % numero de referencias
+rbar_old = 0; 
 
 N = 30; % Horizonte de predicao
-RBAR_old = {0,0,0};
+
 % Matrizes de Peso
 Q = 10*eye(nx);
 R = 1;
-W = 0.01;
+W = 0.1; 
 
 % Discretizacao
 [A,B] = c2dm(Ac,Bc,[],[],T, 'zoh');

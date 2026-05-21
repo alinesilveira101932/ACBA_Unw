@@ -3,21 +3,14 @@ function controller = mpc_controller(A,B,N,Q,R,P,W,Nx,Nu,bo,Or,Sf,na,nx,nu)
 yalmip('clear');
 
 x0 = sdpvar(na*nx,1);
-
+rbar_old = sdpvar(1,1);
 
 % Variaveis
 rbar  = sdpvar(1,1);
 for i = 1: na
   U{i} = sdpvar(nu,N);
   X{i} = sdpvar(nx,N+1);
-  RBAR_old{i} = sdpvar(1,1);
 end
-RBAR{1} = rbar;
-for i = 1: na-1
-   Nbar{i} = intvar(1,1);
-   RBAR{i+1} = rbar + 2*pi*Nbar{i};
-end
-
 constraints = [];
 objective = 0;
 
@@ -28,15 +21,15 @@ constraints = [constraints, X{3}(:,1) == x0(2*nx+1:3*nx)];
 
 % Equilibrios
 for j = 1:na
-    xbar{j} = Nx*RBAR{j};
-    ubar{j} = Nu*RBAR{j};
-    bf{j}   = bo - Or*RBAR{j};
+    xbar{j} = Nx*rbar;
+    ubar{j} = Nu*rbar;
+    bf{j}   = bo - Or*rbar;
 end
 
 % Ao longo do horizonte
 for i = 1:N
     for j = 1:na
-        objective = objective + (X{j}(:,i)-xbar{j})'*Q*(X{j}(:,i)-xbar{j}) + (U{j}(i)-ubar{j})'*R*(U{j}(i)-ubar{j})+((RBAR{j}-RBAR_old{j})'*W*(RBAR{j}-RBAR_old{j}));
+        objective = objective + (X{j}(:,i)-xbar{j})'*Q*(X{j}(:,i)-xbar{j}) + (U{j}(i)-ubar{j})'*R*(U{j}(i)-ubar{j})+((rbar-rbar_old)'*W*(rbar-rbar_old));
         constraints = [constraints, -5 <= U{j}(i) <= 5];
         constraints = [constraints, X{j}(:,i+1) == A*X{j}(:,i)+B*U{j}(i)];
     end
@@ -50,7 +43,7 @@ end
 
 % Solucionar
 ops = sdpsettings('verbose',0,'solver','gurobi');
-outputs = [X U {rbar} Nbar];
-controller = optimizer(constraints,objective,ops,[x0; RBAR_old{1}; RBAR_old{2} ; RBAR_old{3}],outputs);
+outputs = [X U {rbar}];
+controller = optimizer(constraints,objective,ops,[x0; rbar_old],outputs);
 
 end

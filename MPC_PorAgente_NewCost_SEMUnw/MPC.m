@@ -1,13 +1,12 @@
 %% MPC - Usando YALMIP - Artigo MPC + Unwinding - Agentes separados
 % Autor: Aline Isabel
-% Data: 31/03/2026
+% Data: 07;05/2026
 clc;clear;
 %close all;
 %--------------------------------------------------------------------
 % Load parametros
 Parametros_yalmip
 options2 = odeset('Reltol',1e-6,'AbsTol',1e-6); %ode45
-
 
 kend = 100;
  
@@ -19,24 +18,19 @@ x{3}(:,1) = [pi/3;-5];
 controller = mpc_controller(A,B,N,Q,R,P,W,Nx,Nu,bo,Or,Sf,na,nx,nu); % Cria o problema
 
 for k = 1:kend
-    input = [x{1}(:,k); x{2}(:,k); x{3}(:,k); RBAR_old{1};RBAR_old{2};RBAR_old{3}];
+    input = [x{1}(:,k); x{2}(:,k); x{3}(:,k); rbar_old];
 
     % Solucao
     sol = controller(input);
 
     rbar_opt(:,k) = sol{2*na+1};
-    Nbar_opt{1}(:,k) = 0;
-    RBAR_opt{1}(:,k) = rbar_opt(:,k);
-    for i = 1: na-1
-        Nbar_opt{i+1}(:,k) = sol{2*na+1+i};
-        RBAR_opt{i+1}(:,k) = rbar_opt(:,k) + 2*pi*Nbar_opt{i+1}(:,k);
-    end
+    rbar_old = rbar_opt(:,k);
+  
     for i = 1 : na
         x_sol{i} = sol{i};
         u_sol{i} = sol{na+i};
-        RBAR_old{i} =  RBAR_opt{i}(:,k);
     end
-    
+
     % Opt
     for i = 1:na
         u_opt{i}(:,k) = u_sol{i}(1);
@@ -54,10 +48,8 @@ function xdot = simulation(x,u,Ac,Bc)
 xdot = Ac*x+Bc*u;
 end
 
-
 % tempo
 t = 0.1*[0:kend];
-
 
 %% Plots
 figure (102)
@@ -76,7 +68,7 @@ plot(t,x{1}(1,:),'LineStyle','--','Color',[0.85,0.33,0.10],'LineWidth',2); hold 
 plot(t,x{1}(2,:),'LineStyle','--','Color',[0.00,0.45,0.74],'LineWidth',2)
 hold on;
 hold on; box on;
-stairs(t(2:end),RBAR_opt{1},'--k','linewidth',1)
+stairs(t(2:end),rbar_opt,'--k','linewidth',1)
 xlabel('Tempo, s')
 ylabel('Agente 1')
 legend('$x_1$','$x_2$','$\bar{R}_i$', 'Interpreter', 'latex', 'FontSize', 14,'Location','northoutside','Orientation','horizontal')
@@ -87,7 +79,7 @@ grid on;
 plot(t,x{2}(1,:),'LineStyle','--','Color',[0.85,0.33,0.10],'LineWidth',2); hold on;
 plot(t,x{2}(2,:),'LineStyle','--','Color',[0.00,0.45,0.74],'LineWidth',2)
 hold on; box on;
-stairs(t(2:end),RBAR_opt{2},'--k','linewidth',1,'handlevisibility','off')
+stairs(t(2:end),rbar_opt,'--k','linewidth',1,'handlevisibility','off')
 hold on;xlim([0 t(end)])
 xlabel('Tempo, s')
 ylabel('Agente 2')
@@ -99,7 +91,7 @@ grid on;
 plot(t,x{3}(1,:),'LineStyle','--','Color',[0.85,0.33,0.10],'LineWidth',2); hold on;
 plot(t,x{3}(2,:),'LineStyle','--','Color',[0.00,0.45,0.74],'LineWidth',2)
 hold on; box on;
-stairs(t(2:end),RBAR_opt{3},'--k','linewidth',1,'handlevisibility','off')
+stairs(t(2:end),rbar_opt,'--k','linewidth',1,'handlevisibility','off')
 hold on;xlim([0 t(end)])
 xlabel('Tempo, s')
 ylabel('Agente 3')
