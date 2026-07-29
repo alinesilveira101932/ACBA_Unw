@@ -1,4 +1,4 @@
-%% MPC - Usando YALMIP - Artigo Li2018 
+%% MPC - Usando YALMIP - Tecnica Artigo Li2018 
 % Autor: Aline Isabel
 % Data: 05/2026
 clc;clear;
@@ -14,7 +14,7 @@ kend = 150;
 x1_0 = [pi/3;10];
 x2_0 = [pi/10;0];
 x3_0 = [pi/3;-5];
-
+% 
 % x1_0 = [0;0];
 % x2_0 = [pi/5;0];
 % x3_0 = [pi/2;0];

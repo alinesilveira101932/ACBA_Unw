@@ -1,4 +1,4 @@
-
+%% Reproducao resultados Artigo Li2018 
 clc;clear;close all;
 %--------------------------------------------------------------------
 % Load parametros
@@ -33,94 +33,94 @@ end
 t = 0.1*[0:kend];
 
 %% Plots
-figure (102)
+figure (1)
 hold on
 grid on; xlim([0 t(end)])
-plot(t(1:end-1),u_opt(1,:),'LineStyle','--','LineWidth',2); hold on;
-plot(t(1:end-1),u_opt(2,:),'LineStyle','--','LineWidth',2);
-plot(t(1:end-1),u_opt(3,:),'LineStyle','--','LineWidth',2)
-plot(t(1:end-1),u_opt(4,:),'LineStyle','--','LineWidth',2)
-plot(t(1:end-1),u_opt(5,:),'LineStyle','--','LineWidth',2)
+plot(t(1:end-1),u_opt(1,:),'b','LineStyle',':','LineWidth',2); hold on;
+plot(t(1:end-1),u_opt(2,:),'b','LineStyle',':','LineWidth',2);
+plot(t(1:end-1),u_opt(3,:),'b','LineStyle',':','LineWidth',2)
+plot(t(1:end-1),u_opt(4,:),'b','LineStyle',':','LineWidth',2)
+plot(t(1:end-1),u_opt(5,:),'b','LineStyle',':','LineWidth',2)
 hold on; box on;
 xlabel('Tempo, s'); ylabel('u1')
 legend('Ag1', 'Ag2', 'Ag3','Ag4','Ag5')
 
-figure (103)
+figure (2)
 hold on
 grid on; xlim([0 t(end)])
-plot(t(1:end-1),u_opt(6,:),'LineStyle','--','LineWidth',2); hold on;
-plot(t(1:end-1),u_opt(7,:),'LineStyle','--','LineWidth',2);
-plot(t(1:end-1),u_opt(8,:),'LineStyle','--','LineWidth',2)
-plot(t(1:end-1),u_opt(9,:),'LineStyle','--','LineWidth',2)
-plot(t(1:end-1),u_opt(10,:),'LineStyle','--','LineWidth',2)
+plot(t(1:end-1),u_opt(6,:),'b','LineStyle',':','LineWidth',2); hold on;
+plot(t(1:end-1),u_opt(7,:),'b','LineStyle',':','LineWidth',2);
+plot(t(1:end-1),u_opt(8,:),'b','LineStyle',':','LineWidth',2)
+plot(t(1:end-1),u_opt(9,:),'b','LineStyle',':','LineWidth',2)
+plot(t(1:end-1),u_opt(10,:),'b','LineStyle',':','LineWidth',2)
 hold on; box on;
 xlabel('Tempo, s'); ylabel('u2')
 legend('Ag1', 'Ag2', 'Ag3','Ag4','Ag5')
 
-figure (6)
+figure (3)
 hold on
 grid on; xlim([0 t(end)])
-plot(t,x(1,:),'LineStyle','--','LineWidth',2); hold on;
-plot(t,x(2,:),'LineStyle','--','LineWidth',2)
-plot(t,x(3,:),'LineStyle','--','LineWidth',2); hold on;
-plot(t,x(4,:),'LineStyle','--','LineWidth',2)
-plot(t,x(5,:),'LineStyle','--','LineWidth',2); hold on;
+plot(t,x(1,:),'b','LineStyle',':','LineWidth',2); hold on;
+plot(t,x(2,:),'b','LineStyle',':','LineWidth',2)
+plot(t,x(3,:),'b','LineStyle',':','LineWidth',2); hold on;
+plot(t,x(4,:),'b','LineStyle',':','LineWidth',2)
+plot(t,x(5,:),'b','LineStyle',':','LineWidth',2); hold on;
 hold on;
 hold on; box on;
 hold on; box on; legend('Ag1', 'Ag2', 'Ag3','Ag4','Ag5')
 xlabel('Tempo, s')
 ylabel('x1')
 
-figure (7)
+figure (4)
 hold on
 grid on; xlim([0 t(end)])
-plot(t,x(6,:),'LineStyle','--','LineWidth',2); hold on;
-plot(t,x(7,:),'LineStyle','--','LineWidth',2)
-plot(t,x(8,:),'LineStyle','--','LineWidth',2); hold on;
-plot(t,x(9,:),'LineStyle','--','LineWidth',2)
-plot(t,x(10,:),'LineStyle','--','LineWidth',2); hold on;
+plot(t,x(6,:),'b','LineStyle',':','LineWidth',2); hold on;
+plot(t,x(7,:),'b','LineStyle',':','LineWidth',2)
+plot(t,x(8,:),'b','LineStyle',':','LineWidth',2); hold on;
+plot(t,x(9,:),'b','LineStyle',':','LineWidth',2)
+plot(t,x(10,:),'b','LineStyle',':','LineWidth',2); hold on;
 hold on;
 hold on; box on;
 hold on; box on; legend('Ag1', 'Ag2', 'Ag3','Ag4','Ag5')
 xlabel('Tempo, s')
 ylabel('x2')
 
-figure (8)
+figure (5)
 hold on
 grid on; xlim([0 t(end)])
-plot(t,x(11,:),'LineStyle','--','LineWidth',2); hold on;
-plot(t,x(12,:),'LineStyle','--','LineWidth',2)
-plot(t,x(13,:),'LineStyle','--','LineWidth',2); hold on;
-plot(t,x(14,:),'LineStyle','--','LineWidth',2)
-plot(t,x(15,:),'LineStyle','--','LineWidth',2); hold on;
+plot(t,x(11,:),'b','LineStyle',':','LineWidth',2); hold on;
+plot(t,x(12,:),'b','LineStyle',':','LineWidth',2)
+plot(t,x(13,:),'b','LineStyle',':','LineWidth',2); hold on;
+plot(t,x(14,:),'b','LineStyle',':','LineWidth',2)
+plot(t,x(15,:),'b','LineStyle',':','LineWidth',2); hold on;
 hold on;
 hold on; box on;
 hold on; box on; legend('Ag1', 'Ag2', 'Ag3','Ag4','Ag5')
 xlabel('Tempo, s')
 ylabel('x3')
 
-figure (9)
+figure (6)
 hold on
 grid on; xlim([0 t(end)])
-plot(t,x(16,:),'LineStyle','--','LineWidth',2); hold on;
-plot(t,x(17,:),'LineStyle','--','LineWidth',2)
-plot(t,x(18,:),'LineStyle','--','LineWidth',2); hold on;
-plot(t,x(19,:),'LineStyle','--','LineWidth',2)
-plot(t,x(20,:),'LineStyle','--','LineWidth',2); hold on;
+plot(t,x(16,:),'b','LineStyle',':','LineWidth',2); hold on;
+plot(t,x(17,:),'b','LineStyle',':','LineWidth',2)
+plot(t,x(18,:),'b','LineStyle',':','LineWidth',2); hold on;
+plot(t,x(19,:),'b','LineStyle',':','LineWidth',2)
+plot(t,x(20,:),'b','LineStyle',':','LineWidth',2); hold on;
 hold on;
 hold on; box on;
 hold on; box on; legend('Ag1', 'Ag2', 'Ag3','Ag4','Ag5')
 xlabel('Tempo, s')
 ylabel('x4')
 
-figure (10)
+figure (7)
 hold on
 grid on; xlim([0 t(end)])
-plot(t,x(21,:),'LineStyle','--','LineWidth',2); hold on;
-plot(t,x(22,:),'LineStyle','--','LineWidth',2)
-plot(t,x(23,:),'LineStyle','--','LineWidth',2); hold on;
-plot(t,x(24,:),'LineStyle','--','LineWidth',2)
-plot(t,x(25,:),'LineStyle','--','LineWidth',2); hold on;
+plot(t,x(21,:),'b','LineStyle',':','LineWidth',2); hold on;
+plot(t,x(22,:),'b','LineStyle',':','LineWidth',2)
+plot(t,x(23,:),'b','LineStyle',':','LineWidth',2); hold on;
+plot(t,x(24,:),'b','LineStyle',':','LineWidth',2)
+plot(t,x(25,:),'b','LineStyle',':','LineWidth',2); hold on;
 hold on;
 hold on; box on;
 hold on; box on; legend('Ag1', 'Ag2', 'Ag3','Ag4','Ag5')

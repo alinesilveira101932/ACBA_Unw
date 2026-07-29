@@ -6,15 +6,15 @@ clc;clear
 %--------------------------------------------------------------------
 %% Planta
 % Integrador duplo - sistema instavel
-% Ac = [0 1; 0 0];
-% Bc = [0;1];
-% C = [1 0];
-
-% Integrador duplo com atrito viscoso - sistema semi-estavel
-b = 0.5;
-Ac = [0 1; 0 -b];
+Ac = [0 1; 0 0];
 Bc = [0;1];
 C = [1 0];
+
+% Integrador duplo com atrito viscoso - sistema semi-estavel
+% b = 0.5;
+% Ac = [0 1; 0 -b];
+% Bc = [0;1];
+% C = [1 0];
 
 T = 0.1; % Periodo de amostragem
 
@@ -26,7 +26,7 @@ nq = size(C,1);
 na = 3; % numero de agentes
 nr = 3; % numero de referencias
 
-N = 25; % Horizonte de predicao
+N = 35; % Horizonte de predicao
 
 % Discretizacao
 [A,B] = c2dm(Ac,Bc,[],[],T, 'zoh');
@@ -34,7 +34,7 @@ N = 25; % Horizonte de predicao
 % Sistema empilhado
 I_na = eye(na);
 
-sistema = 0; % 0 para sistemas semi-estaveis e 1 para sistemas instaveis - definicao artigo Li2018
+sistema = 1; % 0 para sistemas semi-estaveis e 1 para sistemas instaveis - definicao artigo Li2018
 
 %% Matrizes do grafo - EqsRef:  DOI: 10.1561/2600000019.
 %        1
