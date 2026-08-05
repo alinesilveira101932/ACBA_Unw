@@ -61,9 +61,9 @@ ex = 1e-3*ones(1*size(Sx,1),1);
 bx = [x1max ; -x1min; x2max; -x2min];
 bu = [umax; -umin];
 
-Sxbar = [A-eye(nx);A-eye(nx)]; % Eq de equilibrio: (A-I)xbar+Bubar = 0
+Sxbar = [A-eye(nx);-A+eye(nx)]; % Eq de equilibrio: (A-I)xbar+Bubar = 0
 bxubar = [zeros(nx,1); zeros(nx,1)]; % implementada como duas restricoes: (A-I)xbar+Bubar > 0 e (A-I)xbar+Bubar < 0
-Subar = [B;B];
+Subar = [B;-B];
 
 %% Determinar O_psi_inf - com respeito a xbar -> sendo ubar = 0;
 
@@ -75,7 +75,7 @@ Spsi = [Spsi_1; [zeros(2*nx,nx+nu) Sxbar Subar]];
 bpsi = [bx; bu; bx-ex;bu-eu;bxubar];
 Apsi_f = [Af B*K B; zeros(nx,nx) eye(nx) zeros(nx,nu); zeros(nu,nx) zeros(nu,nx) eye(nu)];
 max_iter = 100;
-tol = 1e-4;
+tol = 1e-8;
 [So,bo,Si,bi] = Oinf_MAS(Apsi_f,Gamma,Spsi,bpsi,max_iter,tol);
 
 O_psi_inf = Polyhedron('H',[So bo]); % Declaração de Oinf como objeto do MPT Toolbox
