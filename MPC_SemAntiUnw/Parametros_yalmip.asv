@@ -27,6 +27,11 @@ Q = 10*eye(nx);
 R = 1;
 W = 0.1; 
 
+% Matrizes de Peso
+% Q = [3 0;0 10];
+% R = 1;
+% W = 0.01;
+
 % Discretizacao
 [A,B] = c2dm(Ac,Bc,[],[],T, 'zoh');
 
@@ -56,17 +61,45 @@ ex = 1e-3*ones(1*size(Sx,1),1);
 bx = [x1max ; -x1min; x2max; -x2min];
 bu = [umax; -umin];
 
-%% Determinar O_psi_inf - todas as refs
+%% Determinar O_psi_inf - por ref
 
-Gamma = [eye(nx) zeros(nx,1); -K (K*Nx+Nu); zeros(nx,nx) Nx; zeros(nu,nx) Nu];
+% Gamma = [eye(nx) zeros(nx,1); -K (K*Nx+Nu); zeros(nx,nx) Nx; zeros(nu,nx) Nu];
+% 
+% Spsi = blkdiag(Sx,Su,Sx,Su);
+% bpsi = [bx; bu; bx-ex; bu-eu];
+% 
+% Apsi_f = [Af B*(K*Nx+Nu); zeros(nq,nx) eye(nq)];
+% max_iter = 50;
+% 
+% [So,bo,Si,bi] = Oinf_MAS(Apsi_f,Gamma,Spsi,bpsi,max_iter);
+% 
+% O_psi_inf = Polyhedron('H',[So bo]); % Declaração de Oinf como objeto do MPT Toolbox
+% 
+% % figure (1)
+% % plot(O_psi_inf)
+% 
+% % Determinar Oinf a partir de O_psi_inf
+% Ox = So(:,1:nx);
+% Or = So(:,nx+1:end);
+% Sf = Ox;
+
+
+%% Determinar O_psi_inf - com respeito a q -> xbar e ubar
+
+H = [A-eye(nx) B]; T = null(H);
+Tx = T(1:nx,:); Tu = T(nx+1:end,:);
+nt = size(T,2);
+
+Gamma = [eye(nx) zeros(nx,1); -K K*Tx+Tu; zeros(nx,nx) Tx; zeros(nu,nx) Tu];
 
 Spsi = blkdiag(Sx,Su,Sx,Su);
 bpsi = [bx; bu; bx-ex; bu-eu];
 
-Apsi_f = [Af B*(K*Nx+Nu); zeros(nq,nx) eye(nq)];
+Apsi_f = [Af B*K*Tx+B*Tu; zeros(nu,nx) eye(nu)];
 max_iter = 50;
+tol = 1e-6;
 
-[So,bo,Si,bi] = Oinf_MAS(Apsi_f,Gamma,Spsi,bpsi,max_iter);
+[So,bo,Si,bi] = Oinf_MAS(Apsi_f,Gamma,Spsi,bpsi,max_iter,tol);
 
 O_psi_inf = Polyhedron('H',[So bo]); % Declaração de Oinf como objeto do MPT Toolbox
 
@@ -75,5 +108,5 @@ O_psi_inf = Polyhedron('H',[So bo]); % Declaração de Oinf como objeto do MPT T
 
 % Determinar Oinf a partir de O_psi_inf
 Ox = So(:,1:nx);
-Or = So(:,nx+1:end);
+Oq = So(:,nx+1:end);
 Sf = Ox;
