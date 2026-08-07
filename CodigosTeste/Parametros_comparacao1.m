@@ -64,6 +64,10 @@ tol = 1e-6;
 [So,bo,Si,bi] = Oinf_MAS(Apsi_f,Gamma,Spsi,bpsi,max_iter,tol);
 
 O_psi_inf_1 = Polyhedron('H',[So bo]); % Declaração de Oinf como objeto do MPT Toolbox
+
+q = 0.25*[1;1];
+xbar = Tx*q; ubar = Tu*q;
+
 % Operação de projeção empregando o MPT Toolbox
 
 % D1 = projection(O_psi_inf_1,2:3);
@@ -78,7 +82,11 @@ O_psi_inf_1 = Polyhedron('H',[So bo]); % Declaração de Oinf como objeto do MPT
 % Determinar Oinf a partir de O_psi_inf
 Ox = So(:,1:nx);
 Oq = So(:,nx+1:end);
-Sf = Ox;
+Sf1 = Ox;
+bf1 = bo-Oq*q;
+O_x_1 = Polyhedron('H',[Sf1 bf1]);
+% Ox1 = projection(O_x_1,1:2);
+% figure (89) ; plot(Ox1,'Color','g')
 
 % % Projecao Cond Inicial
 % Sw = [(A-eye(nx)) B; -(A-eye(nx)) -B;zeros(nu*2,nx) Su];
@@ -122,10 +130,14 @@ O_psi_inf_2 = Polyhedron('H',[So_2 bo_2]); % Declaração de Oinf como objeto do
 % plot(O_psi_inf)
 
 % Determinar Oinf a partir de O_psi_inf
-Ox = So(:,1:nx);
-Oubar = So(:,nx+1:nx+nu);
-Oxbar = So(:,nx+nu+1:end);
-Sf = Ox;
+Ox = So_2(:,1:nx);
+Oubar = So_2(:,nx+1:nx+nu);
+Oxbar = So_2(:,nx+nu+1:end);
+Sf2 = Ox;
+bf2 = bo_2-Oxbar*xbar-Oubar*ubar;
+O_x_2 = Polyhedron('H',[Sf2 bf2]);
+% Ox2 = projection(O_x_2,1:2);
+% figure (90) ; plot(Ox2,'Color','g')
 
 %% Condicao inicial
 seed = 2233;
