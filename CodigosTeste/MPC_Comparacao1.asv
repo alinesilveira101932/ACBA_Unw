@@ -1,0 +1,223 @@
+%% MPC - Comparacao sem anti Unwinding  vs artigo li2018
+% % Modelo artigo Li2018 - 5 estados e 2 entradas
+% Autor: Aline Isabel
+% Data: 24/07/2026
+clc;clear;
+% close all;
+%--------------------------------------------------------------------
+% Load parametros
+Parametros_comparacao1
+options2 = odeset('Reltol',1e-6,'AbsTol',1e-6); %ode45
+
+kend = 150;
+ 
+% Estados iniciais
+for i = 1:na
+x{i}(:,1) = xini(5*i-4:5*i);
+end
+xbar_old = zeros(nx,1);
+custo = 0;
+
+controller = mpc_controller_comparacao(A,B,N,Q,R,P,W,bo,Oq,Sf,na,nx,nu,Su,bu,Tu,Tx,nt); % Cria o problema
+
+for k = 1:kend
+    input = [x{1}(:,k); x{2}(:,k); x{3}(:,k); x{4}(:,k); x{5}(:,k); xbar_old];
+
+    % Solucao
+    [sol, diagnostics] = controller(input);
+
+    xbar_opt(:,k) = sol{2*na+1};
+    ubar_opt(:,k) = sol{2*na+2};
+    ubar_opt(:,k) = [0;0];
+    xbar_old = xbar_opt(:,k);
+    custoJk (:,k) = sol{end};
+
+    for i = 1 : na
+        x_sol{i} = sol{i};
+        u_sol{i} = sol{na+i};
+    end
+
+    % Opt
+    for i = 1:na
+        u_opt{i}(:,k) = u_sol{i}(:,1);
+    end
+
+    % Simulacao e evolucao dos estados
+    for i = 1:na
+    x{i}(:,k+1) =A*x{i}(:,k)+B*u_opt{i}(:,k);
+    end
+
+    for i = 1:na
+custo = custo + (x{i}(:,k)-xbar_opt(:,k))'*Q*(x{i}(:,k)-xbar_opt(:,k))+(u_opt{i}(:,k)-ubar_opt(:,k))'*R*(u_opt{i}(:,k)-ubar_opt(:,k));
+    end
+end
+
+
+% tempo
+t = 0.1*[0:kend];
+
+%% Plots
+figure (1)
+hold on
+grid on; xlim([0 t(end)])
+plot(t(1:end-1),u_opt{1}(1,:),'r','LineStyle','--','LineWidth',2); hold on;
+plot(t(1:end-1),u_opt{2}(1,:),'r','LineStyle','--','LineWidth',2);
+plot(t(1:end-1),u_opt{3}(1,:),'r','LineStyle','--','LineWidth',2);
+plot(t(1:end-1),u_opt{4}(1,:),'r','LineStyle','--','LineWidth',2);
+plot(t(1:end-1),u_opt{5}(1,:),'r','LineStyle','--','LineWidth',2);
+hold on; box on;
+% stairs(t(1:end-1),ubar_opt(1,:),'--k','linewidth',1)
+xlabel('Tempo [s]'); ylabel('u1')
+
+figure (2)
+hold on
+grid on; xlim([0 t(end)])
+plot(t(1:end-1),u_opt{1}(2,:),'r','LineStyle','--','LineWidth',2); hold on;
+plot(t(1:end-1),u_opt{2}(2,:),'r','LineStyle','--','LineWidth',2);
+plot(t(1:end-1),u_opt{3}(2,:),'r','LineStyle','--','LineWidth',2);
+plot(t(1:end-1),u_opt{4}(2,:),'r','LineStyle','--','LineWidth',2);
+plot(t(1:end-1),u_opt{5}(2,:),'r','LineStyle','--','LineWidth',2);
+hold on; box on;
+% stairs(t(1:end-1),ubar_opt(2,:),'--k','linewidth',1)
+xlabel('Tempo [s]'); ylabel('u2')
+
+figure (3)
+hold on
+grid on; xlim([0 t(end)])
+plot(t,x{1}(1,:),'r','LineStyle','--','LineWidth',2); hold on;
+plot(t,x{2}(1,:),'r','LineStyle','--','LineWidth',2)
+plot(t,x{3}(1,:),'r','LineStyle','--','LineWidth',2)
+plot(t,x{4}(1,:),'r','LineStyle','--','LineWidth',2)
+plot(t,x{5}(1,:),'r','LineStyle','--','LineWidth',2)
+hold on;
+hold on; box on;
+% stairs(t(1:end-1),xbar_opt(1,:),'--k','linewidth',1)
+xlabel('Tempo [s]')
+ylabel('x1')
+% legend('$x_1$','$x_2$','$\bar{R}_i$', 'Interpreter', 'latex', 'FontSize', 14,'Location','northoutside','Orientation','horizontal')
+
+figure (4)
+hold on
+grid on; 
+plot(t,x{1}(2,:),'r','LineStyle','--','LineWidth',2); hold on;
+plot(t,x{2}(2,:),'r','LineStyle','--','LineWidth',2)
+plot(t,x{3}(2,:),'r','LineStyle','--','LineWidth',2)
+plot(t,x{4}(2,:),'r','LineStyle','--','LineWidth',2)
+plot(t,x{5}(2,:),'r','LineStyle','--','LineWidth',2)
+hold on; box on;
+% stairs(t(1:end-1),xbar_opt(2,:),'--k','linewidth',1)
+hold on;xlim([0 t(end)])
+xlabel('Tempo [s]')
+ylabel('x2')
+% legend('x_1','x_2')
+
+figure (5)
+hold on
+grid on; 
+plot(t,x{1}(3,:),'r','LineStyle','--','LineWidth',2); hold on;
+plot(t,x{2}(3,:),'r','LineStyle','--','LineWidth',2)
+plot(t,x{3}(3,:),'r','LineStyle','--','LineWidth',2)
+plot(t,x{4}(3,:),'r','LineStyle','--','LineWidth',2)
+plot(t,x{5}(3,:),'r','LineStyle','--','LineWidth',2)
+hold on; box on;
+% stairs(t(1:end-1),xbar_opt(3,:),'--k','linewidth',1)
+hold on;xlim([0 t(end)])
+xlabel('Tempo [s]')
+ylabel('x3')
+
+figure (6)
+hold on
+grid on; 
+plot(t,x{1}(4,:),'r','LineStyle','--','LineWidth',2); hold on;
+plot(t,x{2}(4,:),'r','LineStyle','--','LineWidth',2)
+plot(t,x{3}(4,:),'r','LineStyle','--','LineWidth',2)
+plot(t,x{4}(4,:),'r','LineStyle','--','LineWidth',2)
+plot(t,x{5}(4,:),'r','LineStyle','--','LineWidth',2)
+hold on; box on;
+% stairs(t(1:end-1),xbar_opt(4,:),'--k','linewidth',1)
+hold on;xlim([0 t(end)])
+xlabel('Tempo [s]')
+ylabel('x4')
+
+figure (7)
+hold on
+grid on; 
+plot(t,x{1}(5,:),'r','LineStyle','--','LineWidth',2); hold on;
+plot(t,x{2}(5,:),'r','LineStyle','--','LineWidth',2)
+plot(t,x{3}(5,:),'r','LineStyle','--','LineWidth',2)
+plot(t,x{4}(5,:),'r','LineStyle','--','LineWidth',2)
+plot(t,x{5}(5,:),'r','LineStyle','--','LineWidth',2)
+hold on; box on;
+% stairs(t(1:end-1),xbar_opt(5,:),'--k','linewidth',1)
+hold on;xlim([0 t(end)])
+xlabel('Tempo [s]')
+ylabel('x5')
+
+figure (8)
+hold on
+grid on; 
+stairs(t(1:end-1),xbar_opt(1,:),'linewidth',2)
+stairs(t(1:end-1),xbar_opt(2,:),'linewidth',2)
+stairs(t(1:end-1),xbar_opt(3,:),'linewidth',2)
+stairs(t(1:end-1),xbar_opt(4,:),'linewidth',2)
+stairs(t(1:end-1),xbar_opt(5,:),'linewidth',2)
+hold on; box on;
+hold on;xlim([0 t(end)])
+xlabel('Tempo [s]')
+ylabel('xbar')
+
+figure (9)
+hold on
+grid on; 
+stairs(t(1:end-1),ubar_opt(1,:),'linewidth',2)
+stairs(t(1:end-1),ubar_opt(2,:),'linewidth',2)
+hold on; box on;
+hold on;xlim([0 t(end)])
+xlabel('Tempo [s]')
+ylabel('ubar')
+
+figure (10)
+hold on
+grid on; 
+check = (A-eye(na))*xbar_opt + B*ubar_opt;
+plot (t(1:end-1),check,'linewidth',2)
+hold on; box on;
+hold on;xlim([0 t(end)])
+xlabel('Tempo [s]')
+ylabel('check relacao xbar e ubar')
+
+
+e = zeros(1,size(x{1},2));   % 1 x tempo
+
+for i = 1:na-1
+    for j = i+1:na
+        e = e + sum(abs(x{i} - x{j}),1);
+    end
+end
+
+% c1 = sum(u_opt{});
+
+figure (13)
+hold on
+grid on; xlim([0 t(end)])
+plot(t,e,'--r','LineWidth',1.5); hold on;
+hold on;  box on;
+xlabel('Tempo [s]'); ylabel('Soma dos erros de estado')
+
+% figure (14)
+% hold on
+% grid on; xlim([0 t(end)])
+% plot(t(1:end-1),c,'--b','LineWidth',1.5); hold on;
+% hold on;  box on;
+% xlabel('Tempo [s]'); ylabel('Somatorio dos controles dos agentes')
+
+% figure (15)
+% hold on
+% grid on; 
+% plot (t(1:end-1),custo,'r','linewidth',2)
+% % hold on; box on;
+% hold on;xlim([0 t(end)])
+% xlabel('Tempo [s]')
+% ylabel('Custo J')
+% legend(sprintf('MPC A1: Custo J total = %2.f', custoJ),sprintf('MPC A1_{ubar=0}: Custo J total = %2.f', custoJ),sprintf('MPC B: Custo J total = %2.f', custoJ))
+% hold on
