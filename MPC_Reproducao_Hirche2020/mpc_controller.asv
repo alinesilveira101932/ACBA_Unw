@@ -1,0 +1,62 @@
+function controller = mpc_controller(A,B,C,N,Q,R,P,bo,Oq,Sf,na,nx,nu,ny,Su,bu,Tx,Tu,nt)
+
+yalmip('clear');
+
+x0 = sdpvar(na*nx,1);
+
+% Parametrizado em termos de q para igualdade de equilibrio no conjunto
+% terminal
+
+% Variaveis
+for i = 1: na
+  U{i} = sdpvar(nu,N);
+  X{i} = sdpvar(nx,N+1);
+  qbar{i} = sdpvar(nt,1);
+  xbar{i} = Tx*qbar{i};
+  ubar{i} = Tu*qbar{i};
+  ybar{i} = sdpvar(ny,1);
+end
+
+% Equilibrios
+for i =1:na
+bf{i} = bo - Oq*qbar{i};
+end
+
+constraints = [];
+objective = 0;
+
+% Inicial
+for i = 1:na
+constraints = [constraints, X{i}(:,1) == x0((i-1)*nx+1:i*nx)];
+end
+
+% Ao longo do horizonte
+for i = 1:N
+    for j = 1:na
+        objective = objective + (X{j}(:,i)-xbar{j})'*Q*(X{j}(:,i)-xbar{j}) + (U{j}(:,i)-ubar{j})'*R*(U{j}(i)-ubar{j});
+        constraints = [constraints, Su*U{j}(:,i) <= bu];
+        
+        constraints = [constraints, X{j}(:,i+1) == A*X{j}(:,i)+B*U{j}(i)];
+    end
+end
+
+% Final
+for j = 1:na
+    objective = objective + (X{j}(:,N+1)-xbar{j})'*P*(X{j}(:,N+1)-xbar{j});
+    constraints = [constraints, Sf*X{j}(:,N+1) <= bf{j}];
+end
+
+% Acoplamento de saida
+for i = 1:na
+     constraints = [constraints, [(A-eye(nx)) B; C zeros(ny,nu)]*[xbar{i};ubar{i}] == [zeros(nx,ny); ybar{i}]];
+    for j = 1+i:na
+            objective = objective + (ybar{i}-ybar{j})'*(ybar{i}-ybar{j});
+    end
+end
+
+% Solucionar
+ops = sdpsettings('verbose',0,'solver','gurobi');
+outputs = [X U xbar ubar ybar];
+controller = optimizer(constraints,objective,ops,[x0],outputs);
+
+end
